@@ -1,0 +1,96 @@
+esphome:
+  name: front-doorbell
+  platform: ESP32
+  board: esp-wrover-kit
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+wifi:
+  ssid: "SSID"
+  password: "PASSWORD"
+  
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Front-Doorbell Fallback Hotspot"
+    password: "RANDOMSTUFF"
+
+captive_portal:
+
+binary_sensor:
+  - platform: gpio
+    pin: GPIO33
+    name: doorbell PIR
+    device_class: motion
+
+  - platform: gpio
+    pin:
+      number: GPIO34
+      mode: INPUT_PULLUP
+      inverted: True
+    name: doorbell button
+    on_press:
+      then:
+        - display.page.show: ding_page
+        - component.update: doorbell_display
+        - delay: 2s
+        - display.page.show: name_page
+        - component.update: doorbell_display
+        - homeassistant.service: 
+            service: script.turn_on
+            data:
+              entity_id: "script.doorbell"
+
+
+esp32_camera:
+  name: Doorbell Camera
+  external_clock:
+    pin: GPIO32
+    frequency: 20MHz
+  i2c_pins:
+    sda: GPIO13
+    scl: GPIO12
+  data_pins: [GPIO5, GPIO14, GPIO4, GPIO15, GPIO18, GPIO23, GPIO36, GPIO39]
+  vsync_pin: GPIO27
+  href_pin: GPIO25
+  pixel_clock_pin: GPIO19
+  power_down_pin: GPIO26
+  resolution: 640x480
+  max_framerate: 30 fps
+  idle_framerate: 1 fps
+  jpeg_quality: 10
+  vertical_flip: true
+  horizontal_mirror: true
+
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+
+
+font:
+  - file: "fonts/lato-regular.ttf"
+    id: tnr1
+    size: 20
+  - file: "fonts/lato-regular.ttf"
+    id: tnr2
+    size: 30
+
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306 128x64"
+    rotation: 180
+    address: 0x3C
+    id: doorbell_display
+    pages:
+    # Name page
+      - id: name_page
+        lambda: |-
+          it.print(34, 0, id(tnr1), "Hello");
+    # Ding Dong page
+      - id: ding_page
+        lambda: |-
+            it.print(64, 0, id(tnr2), TextAlign::TOP_CENTER, "DING");
+            it.print(64, 64, id(tnr2), TextAlign::BASELINE_CENTER, "DONG");
