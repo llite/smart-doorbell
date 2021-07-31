@@ -19,4 +19,4 @@ Required parts:
 
 Most likely isn't waterproof so probably install somewhere it won't get wet.
 
-an example esphome config are include
+an example esphome config is include
